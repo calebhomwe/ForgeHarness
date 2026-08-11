@@ -1,0 +1,11 @@
+# Doc-50 §4: Crash log autopsy. Feed it a crash: add task with the log path in the title/notes.
+feature: crash_autopsy
+complexity: heavy          # root-causing crashes is where the expensive model earns its keep
+requirements:
+  - read the crash log + callstack referenced in the task title
+  - identify root cause with file:line evidence from the actual source
+  - implement the minimal fix; add a regression test that reproduces the crash condition
+evaluators: [build, tests]
+test_filter: "Project.Regression"
+evidence:
+  - __forge_run__/autopsy.md — root cause, before/after code, why the test proves it

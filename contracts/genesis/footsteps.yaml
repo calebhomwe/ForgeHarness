@@ -1,0 +1,7 @@
+feature: surface_footsteps          # GENESIS D11-12 (audio pass, part 1)
+complexity: local                    # simple enough for the free local model to attempt first
+requirements:
+  - "implement the repo's exact 5-step recipe (see GENESIS_Project_Resources.md) — PM_ materials,
+    ABP_Seeker notifies, SC_Footstep_* cues w/ random pitch+volume, foot-bone trace switch"
+evaluators: [visual]                 # evidence screenshot of ABP notifies + cue graph; audio verified by you
+evidence: [ "__forge_run__/shots/ ABP notify track + SC_Footstep_Concrete graph" ]

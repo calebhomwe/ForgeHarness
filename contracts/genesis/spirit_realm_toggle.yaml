@@ -1,0 +1,10 @@
+feature: spirit_realm_toggle        # GENESIS D7-8
+complexity: standard
+requirements:
+  - BP in Blueprints/SpiritRealm toggling a post-process material (desat/tint/vignette per
+    vault/references), TAG_Spirit_Active gameplay tag drives visibility of spirit-only actors
+  - smooth 0.5s blend both ways; input action on Seeker; 60fps maintained (Lumen ON, Nanite OFF)
+evaluators: [visual, perf]
+visual_threshold: 7
+perf_limits: { frame_ms_max: 16.7, memory_mb_max: 12000 }
+evidence: [ "__forge_run__/shots/ same framing normal vs spirit", "__forge_run__/perf.json" ]

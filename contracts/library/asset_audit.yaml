@@ -1,0 +1,11 @@
+# Doc-50 §7: Asset auditor — run weekly or nightly. Read-only => autonomy 6, risk low, auto-done.
+feature: content_asset_audit
+complexity: cheap
+executor: claude_code
+requirements:
+  - scan Content Browser via MCP/Editor Python for broken soft pointers, missing textures,
+    unused assets, oversized textures (>4k without VT), assets violating naming convention
+  - write findings to __forge_run__/asset_audit.md grouped by severity; DO NOT delete or move anything
+evaluators: [build]        # audit must not break the project; report is the deliverable
+evidence:
+  - __forge_run__/asset_audit.md with counts per category and exact asset paths

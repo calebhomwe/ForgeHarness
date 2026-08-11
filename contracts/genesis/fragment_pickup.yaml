@@ -1,0 +1,11 @@
+feature: fragment_pickup_system     # GENESIS D3-4
+complexity: standard
+requirements:
+  - BP_FragmentPickup in Content/GENESIS/Blueprints/Interact per repo structure/naming
+  - reads DT_Fragments (FFragmentData row per vault/knowledge/GENESIS_Project_Resources.md)
+  - "on overlap+interact — set CurrentState Lost->Found, add to Seeker inventory, camera pull-in,
+    fire dispatcher for UI FragmentViewer; Blueprint only, no C++"
+  - functional test BP: spawn pickup, simulate interact, assert state+inventory
+evaluators: [tests, visual]
+test_filter: "Genesis.Fragment"
+evidence: [ "__forge_run__/shots/ pickup glow + FragmentViewer open" ]

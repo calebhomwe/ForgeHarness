@@ -1,0 +1,46 @@
+# ============ FORGE HARNESS — GENESIS CONFIG ============
+# Tailored from github.com/calebhomwe/genesis: Blueprint-only, Third Person Template,
+# PC @ 60fps, Lumen ON / Nanite OFF for prototyping.
+# --- your machine (EDIT if paths differ) ---
+project_root: "C:/GenesisWork/Project"               # NVMe working clone (D: is the slow USB HDD); holds .mcp.json + .uproject
+uproject:     "C:/GenesisWork/Project/Genesis.uproject"
+engine_root:  "C:/Program Files/Epic Games/UE_5.8"
+
+# --- execution ---
+executor: claude_code            # workhorse; contracts may pick opencode/api for cheap tasks
+claude_bin: claude
+opencode_bin: opencode
+codex_bin: codex
+allowed_tools: "Read,Edit,Write,Bash,Glob,Grep,mcp__unreal"   # verify names: claude --help
+claude_extra_args: []            # unattended: ["--permission-mode", "acceptEdits"]
+executor_timeout_s: 1200          # 20 min per executor turn (was 3600; 1h invites runaways)
+use_worktrees: false             # BP-only + heavy Content/: branches over worktrees to start.
+                                 # Flip to true once Git LFS + shared DDC are set (docs/UNREAL_SETUP.md §4)
+
+# --- model ladder: LM Studio (free/local) -> OpenRouter cheap -> standard -> heavy ---
+llm_base_url: "https://openrouter.ai/api/v1"   # default endpoint for plain-string models
+llm_key_env: OPENROUTER_API_KEY
+models:
+  local:    { name: "qwen2.5-coder-14b-instruct", base_url: "http://localhost:1234/v1" }  # LM Studio
+  # Ollama instead? { name: "qwen2.5-coder:14b", base_url: "http://localhost:11434/v1" }
+  cheap:    "google/gemini-2.5-flash"
+  standard: "anthropic/claude-sonnet-4.5"
+  heavy:    "anthropic/claude-opus-4.6"
+  vision:   "google/gemini-2.5-pro"
+
+# --- budgets (hard stops) ---
+daily_budget_usd: 15.0
+
+# --- evaluators ---
+# Blueprint-only project: no C++ target => no UBT 'build' evaluator by default.
+# 'tests' runs BP Functional Tests via Automation; 'visual' judges screenshots vs vault/references.
+default_evaluators: [visual]
+test_filter: "Genesis"
+visual_threshold: 7
+perf_limits: { frame_ms_max: 16.7, memory_mb_max: 12000 }   # 60fps target from your README
+build_timeout_s: 3600
+test_timeout_s: 3600
+
+# --- paths (relative to this file) ---
+runs_dir: runs
+vault_dir: vault

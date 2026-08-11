@@ -1,0 +1,12 @@
+# Doc-50 §5: GAS wizard. Describe the ability in the task title; contract enforces the wiring.
+feature: gas_ability
+complexity: standard
+requirements:
+  - GameplayAbility subclass + GameplayEffect(s) + GameplayTags declared in one place
+  - cooldown + cost wired via effects, not hardcoded; BlueprintCallable activation API
+  - GameplayCue for feedback (sound/particle hook, placeholder assets acceptable)
+  - replication-safe: no client-authoritative state changes
+evaluators: [build, tests]
+test_filter: "Project.Abilities"
+evidence:
+  - __forge_run__/shots/ ability firing in PIE

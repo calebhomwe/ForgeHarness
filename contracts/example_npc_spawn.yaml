@@ -1,0 +1,19 @@
+# Acceptance contract — the system declares success, not the agent.
+feature: village_npc_spawn_system
+complexity: standard          # cheap | standard | heavy  (ladder starting tier)
+executor: claude_code         # optional per-task override
+
+requirements:
+  - spawns NPCs only inside active World Partition cells
+  - no per-NPC Tick (use timers or Mass)
+  - survives save and load
+  - creates no broken asset references
+
+evaluators: [build, tests, visual, perf]
+test_filter: "MyGame.NPC"     # Automation RunTests filter
+visual_threshold: 7
+perf_limits: { frame_ms_max: 22.2, memory_mb_max: 12000 }
+
+evidence:
+  - screenshots of village with NPCs in __forge_run__/shots/
+  - perf dump written to __forge_run__/perf.json by the soak test

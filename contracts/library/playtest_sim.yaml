@@ -1,0 +1,11 @@
+# Doc-50 §12: Simulated playtester — hostile QA as a task type. Read-only-ish, low risk.
+feature: simulated_playtest
+complexity: cheap
+requirements:
+  - enter PIE; attempt to break the target feature: leave bounds, spam inputs, sequence-break,
+    stand in spawners, quit mid-interaction
+  - log every anomaly with repro steps to __forge_run__/playtest.md
+  - file each confirmed bug as a NEW harness task suggestion at the end of the report
+evaluators: [build]
+evidence:
+  - __forge_run__/playtest.md + __forge_run__/shots/ of anomalies

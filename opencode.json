@@ -1,0 +1,13 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["prompts/worker_system.md", "vault/knowledge/GENESIS_Project_Resources.md"],
+  "provider": {
+    "lmstudio": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": { "baseURL": "http://localhost:1234/v1" },
+      "models": { "qwen2.5-coder-14b-instruct": { "name": "Qwen2.5 Coder 14B (LM Studio)" } }
+    }
+  },
+  "model": "openrouter/anthropic/claude-sonnet-4.5",
+  "small_model": "lmstudio/qwen2.5-coder-14b-instruct"
+}

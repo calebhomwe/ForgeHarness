@@ -1,0 +1,11 @@
+# Doc-50 §6: Level populator — visual work, so the vision evaluator is the judge.
+feature: level_population_pass
+complexity: standard
+requirements:
+  - place lights, cover, pickups, and enemy spawns in the target map per the design note
+    in the task title, using Editor Python/MCP; respect NavMesh (all spawns reachable)
+  - name everything FORGE_T<id>_*; no edits outside the target map
+evaluators: [build, visual]
+visual_threshold: 7
+evidence:
+  - __forge_run__/shots/ 3 angles: player eye-level, high angle, problem areas

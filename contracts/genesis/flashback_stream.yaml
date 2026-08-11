@@ -1,0 +1,10 @@
+feature: flashback_level_stream     # GENESIS D5-6
+complexity: standard
+requirements:
+  - "trigger BP in Blueprints/Interact — screen-fade widget (WA_ prefix) -> stream FlashbackLevel
+    from the fragment's TSoftObjectPtr -> fade in; return event streams back and spreads
+    the writing decal/material to the exterior (repo return beat)"
+  - no hard level references (soft ptr only); works from DT_Fragments row Gen_5_* (Belshazzar)
+evaluators: [tests, visual]
+test_filter: "Genesis.Flashback"
+evidence: [ "__forge_run__/shots/ before-fade, flashback scene, returned exterior with writing" ]

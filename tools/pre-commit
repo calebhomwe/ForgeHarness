@@ -1,0 +1,23 @@
+#!/bin/sh
+# Doc-50 §3: pre-commit AI review, harness-native. Install: copy to .git/hooks/pre-commit (chmod +x).
+# Cheap model reviews the staged diff for Unreal-specific hazards; blocks on CRITICAL only.
+DIFF=$(git diff --cached --unified=1 -- '*.h' '*.cpp' '*.cs')
+[ -z "$DIFF" ] && exit 0
+python3 - "$DIFF" << 'PYEOF'
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__ if '__file__' in dir() else '.')), '..'))
+try:
+    from harness.__main__ import load_cfg
+    from harness.router import llm_chat
+    cfg = load_cfg()
+    diff = sys.argv[1][:24000]
+    res = llm_chat(cfg, cfg["models"]["cheap"], [{"role": "user", "content":
+        "Review this Unreal C++ staged diff. Flag ONLY: missing UPROPERTY on GC-visible UObject* "
+        "members, unchecked pointer deref on serialized refs, client-authoritative state in "
+        "replicated code, Tick added without justification. Output 'OK' or lines "
+        "'CRITICAL: <file> <issue>' / 'WARN: <issue>'.\n\n" + diff}], max_tokens=800)
+    print(res["text"])
+    sys.exit(1 if "CRITICAL:" in res["text"] else 0)
+except Exception as e:
+    print(f"[pre-commit review skipped: {e}]"); sys.exit(0)  # never block commits on infra failure
+PYEOF

@@ -1,0 +1,14 @@
+# Genesis manual pipeline: one chapter per task. Read-only w.r.t. game code => low risk.
+# Usage: python -m harness add "Manual: GAS.md" --contract contracts/library/manual_chapter.yaml \
+#          --risk low --autonomy 6 --budget 2 --priority 3
+# Put the target filename in the task title; the worker reads prompts/genesis_manual.md.
+feature: genesis_manual_chapter
+complexity: standard
+executor: claude_code            # needs web fetch for repos/docs; api executor works if the
+                                 # chapter can be written from already-ingested vault notes
+requirements:
+  - read prompts/genesis_manual.md and follow it exactly for the chapter named in the task title
+  - consult the real source artifacts (repos/docs), record them in frontmatter `sources:`
+  - write ONLY vault/manual/<Chapter>.md and append one TOC line to vault/manual/README.md
+evaluators: [docs]
+doc_path: "vault/manual/__CHAPTER__.md"   # <- EDIT per task, or copy this file per chapter
