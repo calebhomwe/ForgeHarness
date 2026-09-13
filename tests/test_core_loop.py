@@ -7,6 +7,9 @@ import os
 import sqlite3
 import sys
 import tempfile
+import time
+import urllib.error
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -15,6 +18,8 @@ sys.path.insert(0, str(ROOT))
 import yaml  # noqa: E402
 from harness import db  # noqa: E402
 from harness.supervisor import run_task_once, run  # noqa: E402
+from harness.evaluators import _sh  # noqa: E402
+from harness.router import llm_chat  # noqa: E402
 
 PASSED = 0
 
@@ -159,6 +164,51 @@ def test_crash_resume(tmp):
     check("resumed run completes with prior feedback intact", s == "awaiting_approval")
 
 
+def test_failure_boundaries(tmp):
+    print("\n[5] failure boundaries: evaluator timeout, stale recovery, bounded LLM retry")
+    tmp.mkdir(parents=True, exist_ok=True)
+    log = tmp / "timeout.log"
+    p = _sh([sys.executable, "-c", "import time; time.sleep(0.2)"],
+            str(tmp), 0.01, log)
+    check("evaluator timeout becomes a failed result", p.returncode == 124)
+    check("evaluator timeout still writes its log", log.exists())
+
+    con = db.connect(tmp / "stale.db")
+    tid = db.add_task(con, "stalled task", max_attempts=3)
+    db.set_status(con, tid, "running")
+    con.execute("UPDATE tasks SET updated_at=? WHERE id=?", (time.time() - 100, tid))
+    con.commit()
+    check("stale task is returned to retry queue",
+          db.recover_stale_tasks(con, stale_after_s=10) == 1 and
+          con.execute("SELECT status FROM tasks WHERE id=?", (tid,)).fetchone()["status"] == "needs_retry")
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return False
+
+        def read(self):
+            return b'{"choices":[{"message":{"content":"ok"}}],"usage":{"cost":0.0}}'
+
+    with mock.patch("harness.router.urllib.request.urlopen",
+                    side_effect=[urllib.error.URLError("temporary"), Response()]) as opened:
+        result = llm_chat({"llm_base_url": "http://127.0.0.1:1234/v1",
+                           "llm_retry_attempts": 1, "llm_retry_backoff_s": 0,
+                           "llm_timeout_s": 7}, "local-model",
+                          [{"role": "user", "content": "ping"}])
+    check("transient LLM transport failure retries once", result["text"] == "ok" and opened.call_count == 2)
+    check("LLM request uses configured timeout", opened.call_args_list[-1].kwargs["timeout"] == 7.0)
+
+    cfg = make_cfg(tmp / "empty-evaluators", mock_succeed_on=1,
+                   mock_eval_pass_on=1, default_evaluators=[])
+    con2 = db.connect(Path(cfg["runs_dir"]) / "empty.db")
+    tid2 = db.add_task(con2, "no evaluator task", autonomy=6, risk="low")
+    t = con2.execute("SELECT * FROM tasks WHERE id=?", (tid2,)).fetchone()
+    check("successful executor with no evaluators passes", run_task_once(cfg, con2, t) == "done")
+
+
 if __name__ == "__main__":
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         tmp = Path(td)
@@ -166,4 +216,5 @@ if __name__ == "__main__":
         test_budget_and_max_attempts(tmp / "b")
         test_dependencies_autonomy_and_daily_cap(tmp / "c")
         test_crash_resume(tmp / "d")
+        test_failure_boundaries(tmp / "e")
     print(f"\nALL {PASSED} CHECKS PASSED")

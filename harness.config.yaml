@@ -14,6 +14,7 @@ codex_bin: codex
 allowed_tools: "Read,Edit,Write,Bash,Glob,Grep,mcp__unreal"   # verify names: claude --help
 claude_extra_args: []            # unattended: ["--permission-mode", "acceptEdits"]
 executor_timeout_s: 1200          # 20 min per executor turn (was 3600; 1h invites runaways)
+stale_task_timeout_s: 7200        # lease for recovering running/evaluating tasks after a crash
 use_worktrees: false             # BP-only + heavy Content/: branches over worktrees to start.
                                  # Flip to true once Git LFS + shared DDC are set (docs/UNREAL_SETUP.md §4)
 
@@ -30,6 +31,9 @@ models:
 
 # --- budgets (hard stops) ---
 daily_budget_usd: 15.0
+llm_timeout_s: 600                # bounded per-request timeout for API/vision calls
+llm_retry_attempts: 1             # one retry for transient transport/provider failures only
+llm_retry_backoff_s: 0.25
 
 # --- evaluators ---
 # Blueprint-only project: no C++ target => no UBT 'build' evaluator by default.

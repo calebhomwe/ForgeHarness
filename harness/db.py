@@ -113,6 +113,29 @@ def next_task(con):
     ).fetchone()
 
 
+def recover_stale_tasks(con, stale_after_s: float = 7200.0) -> int:
+    """Return tasks stranded mid-attempt to the durable retry queue.
+
+    A process crash can leave a task in ``running`` or ``evaluating`` forever.
+    Only rows older than the explicit lease window are recovered, so a second
+    harness process does not take over an active attempt prematurely.
+    """
+    cutoff = now() - max(0.0, float(stale_after_s))
+    rows = con.execute(
+        "SELECT id, attempts, max_attempts, budget_usd, spent_usd FROM tasks "
+        "WHERE status IN ('running','evaluating') AND updated_at < ?", (cutoff,)
+    ).fetchall()
+    for row in rows:
+        if row["attempts"] >= row["max_attempts"]:
+            status, detail = "failed", "recovered stale task after max attempts"
+        elif row["spent_usd"] >= row["budget_usd"]:
+            status, detail = "failed", "recovered stale task after budget exhausted"
+        else:
+            status, detail = "needs_retry", "recovered stale task after process interruption"
+        set_status(con, row["id"], status, last_error=detail)
+    return len(rows)
+
+
 def start_attempt(con, task_id, n, executor, model, run_dir):
     cur = con.execute(
         """INSERT INTO attempts (task_id, n, executor, model, started, run_dir)

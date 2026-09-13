@@ -16,7 +16,17 @@ from ..unreal import commands as ue
 
 
 def _sh(argv, cwd, timeout, log_path: Path):
-    p = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+    def text(value):
+        if isinstance(value, bytes):
+            return value.decode("utf-8", errors="replace")
+        return value or ""
+
+    try:
+        p = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        # Keep the supervisor alive and make a timeout look like a normal failed
+        # evaluator so the task can retry with its usual feedback path.
+        p = subprocess.CompletedProcess(argv, 124, text(exc.stdout), text(exc.stderr))
     log_path.write_text((p.stdout or "") + "\n--- STDERR ---\n" + (p.stderr or ""),
                         encoding="utf-8", errors="replace")
     return p

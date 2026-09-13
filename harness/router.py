@@ -13,6 +13,8 @@ Localhost endpoints don't require an API key.
 """
 import json
 import os
+import time
+import urllib.error
 import urllib.request
 
 LADDER = ["local", "cheap", "standard", "heavy"]
@@ -53,8 +55,27 @@ def llm_chat(cfg, model, messages: list, max_tokens: int = 4000) -> dict:
         data=json.dumps({"model": name, "messages": messages,
                          "max_tokens": max_tokens, "usage": {"include": True}}).encode(),
         headers=headers)
-    with urllib.request.urlopen(req, timeout=600) as r:
-        data = json.load(r)
+    timeout = float(cfg.get("llm_timeout_s", 600))
+    retries = max(0, int(cfg.get("llm_retry_attempts", 1)))
+    backoff = max(0.0, float(cfg.get("llm_retry_backoff_s", 0.25)))
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                data = json.load(r)
+            break
+        except urllib.error.HTTPError as exc:
+            # Do not retry auth, permission, or request-shape failures. Retry only
+            # statuses that conventionally indicate transient provider pressure.
+            retryable = exc.code in {408, 425, 429, 500, 502, 503, 504}
+            if not retryable or attempt >= retries:
+                raise
+            if backoff:
+                time.sleep(backoff * (2 ** attempt))
+        except (urllib.error.URLError, TimeoutError):
+            if attempt >= retries:
+                raise
+            if backoff:
+                time.sleep(backoff * (2 ** attempt))
     text = data["choices"][0]["message"]["content"]
     usage = data.get("usage", {}) or {}
     cost = 0.0 if is_local else float(usage.get("cost", 0.0) or data.get("response_cost", 0.0) or 0.0)

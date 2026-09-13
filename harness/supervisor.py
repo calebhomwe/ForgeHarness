@@ -110,7 +110,7 @@ def run_task_once(cfg, con, task) -> str:
             if not v["passed"]:
                 failures.append(f"{name}: {str(v.get('details'))[:400]}")
 
-    all_passed = result["exit_status"] == "ok" and verdicts and all(
+    all_passed = result["exit_status"] == "ok" and all(
         v["passed"] for v in verdicts.values())
     write_report(cfg, con, task, att_id, run_dir, verdicts, result, all_passed)
 
@@ -132,6 +132,9 @@ def run_task_once(cfg, con, task) -> str:
 
 
 def run(cfg, con, cycles: int = 20, sleep_s: float = 1.0) -> None:
+    recovered = db.recover_stale_tasks(con, cfg.get("stale_task_timeout_s", 7200))
+    if recovered:
+        print(f"[supervisor] recovered {recovered} stale task(s) for retry.")
     for i in range(cycles):
         if db.spent_today(con) >= cfg.get("daily_budget_usd", 25.0):
             print("[supervisor] daily budget reached — stopping cleanly.")
