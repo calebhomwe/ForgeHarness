@@ -80,3 +80,22 @@ stay behind a human regardless — the harness only ever *proposes* merges via r
 This is deliberately SQLite + stdlib so it runs today. When (and only when) you hit the
 limits, `docs/SCALING.md` maps each module to its heavyweight replacement:
 Postgres, Qdrant retrieval, LangGraph supervisor, Temporal durability, HF trajectory datasets.
+
+---
+
+## Ship signals
+
+- Core loop: 19 tests green (`pytest tests/core -q`)
+- Worker isolation: git-worktree per task, no file collisions
+- Model ladder: cheap-first with escalation on failure
+- State: SQLite (`state.db`) — resumable across process restart
+
+## Try it
+
+Requires `OPENROUTER_API_KEY` and a running Unreal Engine 5.8 project with the MCP plugin.
+
+```bash
+forgeharness dispatch --task-file tasks/hello.jsonl
+```
+
+Watch progress with `forgeharness status`. Full state persists across runs.
