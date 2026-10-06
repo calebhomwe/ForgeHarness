@@ -4,7 +4,7 @@ Orchestrator → workers → evaluators, with durable execution, budgets, experi
 memory, and human approval gates. The agent never grades its own homework:
 **the test system declares success, not the worker.**
 
-Core loop is fully tested (`tests/test_core_loop.py`, 19 checks): retry-with-feedback,
+Core loop is fully tested (`tests/test_core_loop.py`, 25 checks): retry-with-feedback,
 model escalation, evaluator gating, experience promotion, budget hard-stops,
 dependency ordering, autonomy gating, crash-resume.
 
@@ -28,6 +28,16 @@ you ──► harness CLI ──► SUPERVISOR (durable, SQLite-backed)
            yes → done                  promoted to VERIFIED on eventual success
            no  → awaiting_approval → you review report.md → approve/reject
 ```
+
+## Play / Test
+```bash
+pip install -r requirements.txt pytest
+python -m pytest -q tests          # or: python tests/test_core_loop.py  (25 checks, mock executor/evaluators)
+python -m harness --help
+```
+CI (`.github/workflows/test.yml`) parses every contract YAML, runs the core-loop
+tests and smoke-tests the CLI (`init` / `add` / `status`) on each push. Real runs
+need Windows + Unreal + an executor (see Install below).
 
 ## Install (Windows, PowerShell)
 ```powershell

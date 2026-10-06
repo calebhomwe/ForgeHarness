@@ -1,0 +1,32 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  core-loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt pytest
+      - name: Contracts and config parse
+        run: |
+          for f in harness.config.yaml contracts/*.yaml contracts/*/*.yaml; do
+            python -c "import yaml,sys;yaml.safe_load(open(sys.argv[1],encoding='utf-8'))" "$f" || { echo "invalid YAML: $f"; exit 1; }
+          done
+      - name: Core loop (mock executor/evaluators)
+        run: python -m pytest -q tests
+      - name: CLI smoke
+        run: |
+          mkdir -p "$RUNNER_TEMP/forge"
+          sed -e "s#^runs_dir:.*#runs_dir: $RUNNER_TEMP/forge/runs#" -e "s#^vault_dir:.*#vault_dir: $RUNNER_TEMP/forge/vault#" harness.config.yaml > "$RUNNER_TEMP/forge/cfg.yaml"
+          export FORGE_CONFIG="$RUNNER_TEMP/forge/cfg.yaml"
+          python -m harness init
+          python -m harness add "smoke" --contract contracts/library/playtest_sim.yaml
+          python -m harness status
